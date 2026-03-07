@@ -1,21 +1,13 @@
-# Python cache
-__pycache__/
-*.py[cod]
-*$py.class
+# model weights
+*.pt
+*.pth
+*.onnx
+*.engine
 
-# Virtual environments
-venv/
-.env/
-.venv/
+# datasets
+datasets/
+data/
 
-# Jupyter
-.ipynb_checkpoints/
-
-# Build files
-build/
-dist/
-*.egg-info/
-
-# OS files
-.DS_Store
-Thumbs.db
+# outputs
+runs/
+outputs/
