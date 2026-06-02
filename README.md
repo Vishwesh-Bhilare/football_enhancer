@@ -64,6 +64,23 @@ wget https://dl.fbaipublicfiles.com/segment_anything/sam_vit_b_01ec64.pth
 
 ## Quickstart
 
+
+### Professional desktop GUI
+
+Launch the new SceneForge Studio interface for a guided workflow with file pickers, renderer selection, readiness checks, live logs, a progress bar, elapsed time, and ETA:
+
+```bash
+python gui.py
+```
+
+The GUI provides:
+
+- Input/output video selectors and selection JSON management
+- One-click access to the player selection UI
+- Advanced or fast renderer selection
+- Stop controls, readiness indicators, and a live activity log
+- Determinate rendering progress with frame count, elapsed time, and ETA
+
 ### Run the full pipeline
 
 ```bash
@@ -119,6 +136,7 @@ python render_video.py --input match.mp4 --debug --max-frames 20
 ## Project Structure
 
 ```
+├── gui.py                     # SceneForge Studio desktop GUI
 ├── main.py                    # Interactive player selection UI
 ├── batch_render.py            # Rendering pipeline (homography + SD)
 ├── render_video.py            # Advanced renderer with full reconstruction pipeline
