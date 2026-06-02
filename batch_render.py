@@ -3,6 +3,7 @@ import os
 import json
 import argparse
 import numpy as np
+import time
 
 from config import *
 from models.detector import PlayerDetector
@@ -36,6 +37,19 @@ def upscale_back(frame_small, orig_size):
     return cv2.resize(frame_small, orig_size)
 
 
+
+def print_progress(frame_idx, total, started_at):
+    percent = frame_idx / total * 100 if total else 0
+    elapsed = time.monotonic() - started_at
+    eta_seconds = elapsed * (total - frame_idx) / frame_idx if frame_idx and total else 0
+    eta_minutes, eta_secs = divmod(int(max(0, eta_seconds)), 60)
+    eta_hours, eta_minutes = divmod(eta_minutes, 60)
+    eta = f"{eta_hours:02d}:{eta_minutes:02d}:{eta_secs:02d}" if eta_hours else f"{eta_minutes:02d}:{eta_secs:02d}"
+    print(
+        f"Processing {percent:5.1f}%  Frame {frame_idx}/{total}  ETA {eta}",
+        flush=True,
+    )
+
 def main():
 
     parser = argparse.ArgumentParser()
@@ -51,6 +65,7 @@ def main():
     width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
     height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
     fps = cap.get(cv2.CAP_PROP_FPS)
+    total = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
 
     writer = cv2.VideoWriter(
         args.output,
@@ -65,6 +80,7 @@ def main():
 
     prev_output = None
     frame_idx = 0
+    started_at = time.monotonic()
 
     while True:
 
@@ -78,6 +94,7 @@ def main():
 
         if boxes is None or len(boxes) == 0:
             writer.write(frame)
+            print_progress(frame_idx, total, started_at)
             continue
 
         tracker.update(boxes)
@@ -112,7 +129,7 @@ def main():
 
         writer.write(output.astype(np.uint8))
 
-        print(f"\rFrame {frame_idx}", end="")
+        print_progress(frame_idx, total, started_at)
 
     cap.release()
     writer.release()
