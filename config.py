@@ -32,3 +32,5 @@ DEFAULT_VIDEO_PATH = 'data/sample.mp4'
 
 # Display window name
 WINDOW_NAME = 'Football View Enhancer'
+SELECTION_WINDOW_WIDTH = 1280
+SELECTION_WINDOW_HEIGHT = 720

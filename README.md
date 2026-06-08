@@ -89,8 +89,8 @@ An OpenCV window opens with the video. Use the controls below to mark which play
 | `Space` | Pause / play |
 | `→` | Step forward one frame |
 | `←` | Step back one frame |
-| `S` | Save selection to `selection.json` |
-| `Q` | Quit |
+| `S` | Save selection to `selection.json` and start rendering |
+| `Q` | Cancel selection / quit |
 
 Selected players are highlighted in **red**; unselected in green.
 

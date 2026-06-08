@@ -1,6 +1,8 @@
-import cv2
-import json
 import argparse
+import json
+from pathlib import Path
+
+import cv2
 import numpy as np
 import torch
 
@@ -15,11 +17,12 @@ from processing.sam_refiner import SAMRefiner
 SD_INTERVAL = 12
 MASK_HISTORY = 4
 BLEND_ALPHA = 0.6
+SELECTION_PATH = Path(__file__).resolve().parent / "selection.json"
 
 
 def load_selection():
-    with open("selection.json", "r") as f:
-        return set(json.load(f)["selected_ids"])
+    with SELECTION_PATH.open() as file:
+        return set(json.load(file)["selected_ids"])
 
 
 def smooth_mask(mask):
@@ -113,7 +116,7 @@ def main():
 
         frame_idx += 1
 
-        boxes, _ = detector.detect(frame)
+        boxes, yolo_masks = detector.detect(frame)
 
         if boxes is None or len(boxes) == 0:
             writer.write(frame)
@@ -121,8 +124,8 @@ def main():
 
         tracker.update(boxes)
 
-        # SAM masks
-        masks = sam.refine(frame, boxes)
+        # Prefer SAM masks when available; otherwise use YOLO segmentation.
+        masks = sam.refine(frame, boxes) if sam.is_enabled else yolo_masks
 
         selected_indices = tracker.get_detection_indices(selected_ids)
 
@@ -151,7 +154,7 @@ def main():
             )
 
             # SD refinement occasionally
-            if frame_idx % SD_INTERVAL == 0:
+            if inpainter.is_enabled and frame_idx % SD_INTERVAL == 0:
                 output = inpainter.inpaint(output, mask)
                 torch.cuda.empty_cache()
 
