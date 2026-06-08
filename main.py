@@ -8,13 +8,18 @@ Features:
 - player IDs displayed
 """
 
-import cv2
-import json
 import argparse
+import json
+from pathlib import Path
+
+import cv2
 
 from config import *
 from models.detector import PlayerDetector
 from processing.tracker import PlayerTracker
+
+
+SELECTION_PATH = Path(__file__).resolve().parent / "selection.json"
 
 
 class AppState:
@@ -79,6 +84,27 @@ def mouse_callback(event, x, y, flags, state):
                 break
 
 
+def scale_boxes_for_display(boxes, frame_shape, display_size):
+    """Scale detection boxes to the fixed-size selection display."""
+    frame_height, frame_width = frame_shape[:2]
+    display_width, display_height = display_size
+    scale_x = display_width / frame_width
+    scale_y = display_height / frame_height
+
+    scaled_boxes = []
+    for box in boxes:
+        scaled_box = box.copy()
+        scaled_box[:4] = [
+            box[0] * scale_x,
+            box[1] * scale_y,
+            box[2] * scale_x,
+            box[3] * scale_y,
+        ]
+        scaled_boxes.append(scaled_box)
+
+    return scaled_boxes
+
+
 def draw_boxes(frame, boxes, tracker, selected_ids):
 
     output = frame.copy()
@@ -112,10 +138,10 @@ def save_selection(ids):
 
     data = {"selected_ids": list(ids)}
 
-    with open("selection.json", "w") as f:
-        json.dump(data, f, indent=2)
+    with SELECTION_PATH.open("w") as file:
+        json.dump(data, file, indent=2)
 
-    print("Saved selection.json")
+    print(f"Saved {SELECTION_PATH}")
 
 
 def main():
@@ -140,7 +166,7 @@ def main():
 
     state.tracker = tracker
 
-    cv2.namedWindow(WINDOW_NAME)
+    cv2.namedWindow(WINDOW_NAME, cv2.WINDOW_AUTOSIZE)
 
     cv2.setMouseCallback(WINDOW_NAME, mouse_callback, state)
 
@@ -150,7 +176,7 @@ def main():
     print("Space       → pause/play")
     print("→ arrow     → next frame")
     print("← arrow     → previous frame")
-    print("S           → save selection")
+    print("S           → save selection and continue")
     print("Q           → quit\n")
 
     while True:
@@ -173,13 +199,28 @@ def main():
 
             id_mapping, tracked_boxes = tracker.update(boxes)
 
-            state.current_boxes = tracked_boxes
+            display_boxes = scale_boxes_for_display(
+                tracked_boxes,
+                frame.shape,
+                (SELECTION_WINDOW_WIDTH, SELECTION_WINDOW_HEIGHT),
+            )
+            state.current_boxes = display_boxes
 
+            frame = cv2.resize(
+                frame,
+                (SELECTION_WINDOW_WIDTH, SELECTION_WINDOW_HEIGHT),
+            )
             frame = draw_boxes(
                 frame,
-                tracked_boxes,
+                display_boxes,
                 tracker,
                 state.selected_ids
+            )
+        else:
+            state.current_boxes = []
+            frame = cv2.resize(
+                frame,
+                (SELECTION_WINDOW_WIDTH, SELECTION_WINDOW_HEIGHT),
             )
 
         cv2.imshow(WINDOW_NAME, frame)
@@ -212,6 +253,7 @@ def main():
         elif key == ord("s"):
 
             save_selection(state.selected_ids)
+            break
 
     cap.release()
 
